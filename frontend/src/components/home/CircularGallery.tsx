@@ -471,25 +471,25 @@ class App {
   ) {
     const defaultItems = [
       {
-        image: `public/picture/1.jpg`,
+        image: ` /picture/1.jpg`,
       },
       {
-        image: `public/picture/2.jpg`,
+        image: ` /picture/2.jpg`,
       },
       {
-        image: `public/picture/3.jpg`,
+        image: ` /picture/3.jpg`,
       },
       {
-        image: `public/picture/4.jpg`,
+        image: ` /picture/4.jpg`,
       },
       {
-        image: `public/picture/5.jpg`,
+        image: ` /picture/5.jpg`,
       },
       {
-        image: `public/picture/6.jpg`,
+        image: ` /picture/6.jpg`,
       },
       {
-        image: `public/picture/7.jpg`,
+        image: ` /picture/7.jpg`,
       },
     ];
     const galleryItems = items && items.length ? items : defaultItems;
