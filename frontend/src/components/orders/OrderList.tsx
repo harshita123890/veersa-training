@@ -103,6 +103,7 @@ const OrderList = () => {
                                                     <h3 className="text-lg font-semibold text-gray-800">
                                                         Order #{order.id}
                                                     </h3>
+                                                    <p className="text-sm text-gray-600">Created At: {order.created_at}</p>
                                                     <p className="text-sm text-gray-600">
                                                         Customer: {order.customer_name}
                                                     </p>

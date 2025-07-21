@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from app.orders.models import Order, OrderItem
 from app.products.models import Product
 import calendar
+from app.customers.models import Customer  
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -32,8 +33,8 @@ def dashboard_metrics(request):
         OrderItem.objects
         .filter(order__created_by=user)
         .values('product__id', 'product__name')
-        .annotate(sold_count=Count('id'))
-        .order_by('-sold_count')[:5]
+        .annotate(sold_quantity=Sum('quantity'))
+        .order_by('-sold_quantity')[:5]
     )
 
     # Low stock products for this admin
@@ -64,6 +65,9 @@ def dashboard_metrics(request):
         }
         for item in monthly_revenue_raw
     ]
+    total_active_products = Product.objects.filter(created_by=user, status='active').count()
+
+    total_customers = Customer.objects.filter(created_by=user).count()
 
     return Response({
         "total_orders": total_orders,
@@ -73,5 +77,7 @@ def dashboard_metrics(request):
             {"id": p.id, "name": p.name, "stock_quantity": p.stock_quantity}
             for p in low_stock_products
         ],
-        "monthly_revenue": monthly_revenue
+        "monthly_revenue": monthly_revenue,
+        "total_active_products": total_active_products,
+        "total_customers": total_customers
     })
