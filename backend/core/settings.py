@@ -25,7 +25,8 @@ SECRET_KEY = 'django-insecure-g!1fm3e=91af*v(mej470&u=0k(+_(#isju4(v##+i6+i^a5(j
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [    'veersa-training-backend.onrender.com',
+    'localhost',]
 
 
 # Application definition

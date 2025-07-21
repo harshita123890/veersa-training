@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { Product, Customer, Order, OrderCreate } from "../types";
 
-const API_BASE_URL = "http://localhost:8000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
