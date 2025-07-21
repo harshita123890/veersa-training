@@ -7,8 +7,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'email', 'phone_number', 'address']
-    ordering_fields = ['name', 'email']
+    
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)

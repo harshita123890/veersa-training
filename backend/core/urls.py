@@ -20,10 +20,12 @@ from app.products.views import ProductViewSet
 from app.customers.views import CustomerViewSet
 from users.views import SignupView,LoginView
 from .routers import router  
+from app.dashboard.views import dashboard_metrics
+
 urlpatterns = [
     # path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
-     path('api/signup/', SignupView.as_view(), name='signup'),
+    path('api/signup/', SignupView.as_view(), name='signup'),
     path('api/login/', LoginView.as_view(), name='login'),
-    # path('api/logout/', AdminLogoutView.as_view(), name='logout'),
+    path('api/metrics/', dashboard_metrics, name='metrics'),
 ]

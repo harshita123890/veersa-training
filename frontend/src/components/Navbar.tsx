@@ -1,13 +1,15 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+
 const Navbar = () => {
   const { isAuthenticated, logout } = useAuth();
 
   return (
     <nav className="h-16 bg-blue-600 text-white px-6 py-4 flex justify-between items-center shadow-md">
+      
       <Link to="/" className="text-xl font-semibold">
-        MyApp
+        IOMS
       </Link>
       <div className="space-x-4">
         {isAuthenticated ? (

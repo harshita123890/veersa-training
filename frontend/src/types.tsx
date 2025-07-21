@@ -14,3 +14,28 @@ export type Customer = {
   phone: string;
   address: string;
 };
+
+export type OrderItem = {
+  id: number;
+  product: number;
+  product_name: string;
+  quantity: number;
+  price: number;
+};
+export type Order = {
+  id: number;
+  customer: number;
+  customer_name: string;
+  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  created_at: string;
+  items: OrderItem[];
+};
+export type OrderItemCreate = {
+  product: number;
+  quantity: number;
+};
+export type OrderCreate = {
+  customer: number;
+  items: OrderItemCreate[];
+  status: string; 
+};

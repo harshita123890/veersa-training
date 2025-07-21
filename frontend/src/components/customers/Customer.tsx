@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import type { Customer } from "../../types";
-import axios from "axios";
 import { toast } from "react-toastify";
 import Loading from "../Loading";
 import { useAppContext } from "../../context/ContextApi";
 import debounce from "lodash.debounce";
 import CustomerForm from "./CustomerForm";
 import CustomerTable from "./CustomerTable";
+import { addCustomerAPI, deleteCustomerAPI, updateCustomerAPI } from "../../api/dashboard";
 
 const Customers = () => {
     const {
@@ -19,8 +19,7 @@ const Customers = () => {
 
     const [editing, setEditing] = useState<Customer | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
-
-    const token = localStorage.getItem("accessToken");
+    const [displayedCustomers, setDisplayedCustomers] = useState<Customer[]>(customers);
 
     useEffect(() => {
         if (customers.length === 0) {
@@ -29,35 +28,38 @@ const Customers = () => {
     }, []);
 
     useEffect(() => {
-        if(searchTerm!=='') {
-        const debounced = debounce(() => {
-            fetchCustomers(`?search=${encodeURIComponent(searchTerm)}`);
-        }, 500);
+        setDisplayedCustomers(customers);
+    }, [customers]);
 
-        debounced();
-
-        return () => debounced.cancel();
-    }
-    }, [searchTerm]);
+    useEffect(() => {
+        if (searchTerm !== '') {
+            const debounced = debounce(() => {
+                setDisplayedCustomers(
+                    customers.filter(c =>
+                        c.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                );
+            }, 500);
+            debounced();
+            return () => debounced.cancel();
+        } else {
+            setDisplayedCustomers(customers);
+        }
+    }, [searchTerm, customers]);
 
     const handleSubmit = async (data: Omit<Customer, "id">) => {
         try {
             setLoading(true);
+
             if (editing) {
-                const res = await axios.put(`http://localhost:8000/api/customers/${editing.id}/`, data, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                const updatedCustomer = res.data;
+                const updatedCustomer = await updateCustomerAPI(editing.id, data);
                 toast.success("Customer updated successfully!");
 
                 setCustomers((prev) =>
-                    prev.map((prod) => (prod.id === updatedCustomer.id ? updatedCustomer : prod))
+                    prev.map((c) => (c.id === updatedCustomer.id ? updatedCustomer : c))
                 );
             } else {
-                const res = await axios.post("http://localhost:8000/api/customers/", data, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                const newCustomer = res.data;
+                const newCustomer = await addCustomerAPI(data);
                 toast.success("Customer added successfully!");
 
                 setCustomers((prev) => [newCustomer, ...prev]);
@@ -71,21 +73,21 @@ const Customers = () => {
         }
     };
 
+
     const handleDelete = async (id: number) => {
         try {
             setLoading(true);
-            await axios.delete(`http://localhost:8000/api/customers/${id}/`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            toast.success("Customers deleted");
+            await deleteCustomerAPI(id);
+            toast.success("Customer deleted");
 
-            setCustomers((prev) => prev.filter((customer) => customer.id !== id));
+            setCustomers((prev) => prev.filter((c) => c.id !== id));
         } catch {
             toast.error("Error deleting customer.");
         } finally {
             setLoading(false);
         }
     };
+
 
     return (
         <div>
@@ -99,19 +101,14 @@ const Customers = () => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
-
                 </div>
-
-
-
             </div>
             <CustomerForm onSubmit={handleSubmit} initialData={editing} />
-
             {loading ? (
                 <Loading />
             ) : (
                 <>
-                    <CustomerTable customers={customers} onEdit={setEditing} onDelete={handleDelete} />
+                    <CustomerTable customers={displayedCustomers} onEdit={setEditing} onDelete={handleDelete} />
                 </>
             )}
         </div>

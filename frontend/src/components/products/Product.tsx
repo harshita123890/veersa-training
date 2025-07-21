@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import ProductForm from "./ProductForm";
 import ProductTable from "./ProductTable";
 import type { Product } from "../../types";
@@ -7,6 +6,7 @@ import Loading from "../../components/Loading";
 import { toast } from "react-toastify";
 import debounce from "lodash.debounce";
 import { useAppContext } from "../../context/ContextApi";
+import { addProductAPI, deleteProductAPI, updateProductAPI } from "../../api/dashboard";
 const Products = () => {
   const {
     products,
@@ -17,52 +17,48 @@ const Products = () => {
   } = useAppContext();
   const [editing, setEditing] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-
-  const token = localStorage.getItem("accessToken");
-
-
+  const [displayedProducts, setDisplayedProducts] = useState<Product[]>(products);
 
   useEffect(() => {
     if (products.length === 0) {
-    fetchProducts();
-  }
+      fetchProducts();
+    }
   }, []);
 
   useEffect(() => {
-    if(searchTerm!=='') {
-    const debounced = debounce(() => {
-      fetchProducts(`?search=${encodeURIComponent(searchTerm)}`);
-    }, 500);
+    setDisplayedProducts(products);
+  }, [products]);
 
-    debounced();
-
-    return () => debounced.cancel();
-  }
-  }, [searchTerm]);
+  useEffect(() => {
+    if (searchTerm !== '') {
+      const debounced = debounce(() => {
+        setDisplayedProducts(
+          products.filter(p =>
+            p.name.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        );
+      }, 500);
+      debounced();
+      return () => debounced.cancel();
+    } else {
+      setDisplayedProducts(products);
+    }
+  }, [searchTerm, products]);
 
   const handleSubmit = async (data: Omit<Product, "id">) => {
     try {
       setLoading(true);
       if (editing) {
-        const res = await axios.put(`http://localhost:8000/api/products/${editing.id}/`, data, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const updatedProduct = res.data;
+        const updatedProduct = await updateProductAPI(editing.id, data);
         toast.success("Product updated successfully!");
-
         setProducts((prev) =>
           prev.map((prod) => (prod.id === updatedProduct.id ? updatedProduct : prod))
         );
       } else {
-        const res = await axios.post("http://localhost:8000/api/products/", data, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const newProduct = res.data;
+        const newProduct = await addProductAPI(data);
         toast.success("Product added successfully!");
-
         setProducts((prev) => [newProduct, ...prev]);
       }
-
       setEditing(null);
     } catch {
       toast.error("Error saving product.");
@@ -71,14 +67,12 @@ const Products = () => {
     }
   };
 
+
   const handleDelete = async (id: number) => {
     try {
       setLoading(true);
-      await axios.delete(`http://localhost:8000/api/products/${id}/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await deleteProductAPI(id);
       toast.success("Product deleted");
-
       setProducts((prev) => prev.filter((product) => product.id !== id));
     } catch {
       toast.error("Error deleting product.");
@@ -86,6 +80,7 @@ const Products = () => {
       setLoading(false);
     }
   };
+
 
 
   return (
@@ -100,40 +95,37 @@ const Products = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-         
         </div>
         <div className="space-x-2">
           <button
-            onClick={() => fetchProducts("")}
+            onClick={() => setDisplayedProducts(products)}
             className=" cursor-pointer px-3 py-1 bg-blue-600 text-white rounded"
           >
             All
           </button>
           <button
-            onClick={() => fetchProducts("low_stock/")}
+            onClick={() => setDisplayedProducts(products.filter(p => p.stock_quantity <= 5 && p.stock_quantity > 0))}
             className="cursor-pointer px-3 py-1 bg-yellow-500 text-white rounded"
           >
             Low Stock
           </button>
           <button
-            onClick={() => fetchProducts("out_of_stock/")}
+            onClick={() => setDisplayedProducts(products.filter(p => p.stock_quantity === 0))}
             className="cursor-pointer px-3 py-1 bg-red-600 text-white rounded"
           >
             Out of Stock
           </button>
         </div>
         <div className="space-x-2 mt-2">
-
-
           <select
             onChange={(e) => {
               const val = e.target.value;
-              const sorted = [...products].sort((a, b) => {
+              const sorted = [...displayedProducts].sort((a, b) => {
                 if (val === "asc") return a.stock_quantity - b.stock_quantity;
                 if (val === "desc") return b.stock_quantity - a.stock_quantity;
                 return 0;
               });
-              setProducts(sorted);
+              setDisplayedProducts(sorted);
             }}
             className="p-1 border rounded"
           >
@@ -142,15 +134,13 @@ const Products = () => {
             <option value="desc">Stock: High → Low</option>
           </select>
         </div>
-
       </div>
       <ProductForm onSubmit={handleSubmit} initialData={editing} />
-
       {loading ? (
         <Loading />
       ) : (
         <>
-          <ProductTable products={products} onEdit={setEditing} onDelete={handleDelete} />
+          <ProductTable products={displayedProducts} onEdit={setEditing} onDelete={handleDelete} />
         </>
       )}
     </div>

@@ -1,5 +1,12 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import type { Customer, Product } from "../types";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import type { Customer, Order, OrderCreate, Product } from "../types";
+import {
+  fetchProductsAPI,
+  fetchCustomersAPI,
+  fetchOrdersAPI,
+  createOrderAPI,
+  updateOrderStatusAPI,
+} from "../api/dashboard"; 
 
 type ContextType = {
     products: Product[];
@@ -8,8 +15,14 @@ type ContextType = {
     setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
     loading: boolean;
     setLoading: React.Dispatch<React.SetStateAction<boolean>>;
-    fetchProducts: (endpoint?: string) => Promise<void>;
-    fetchCustomers: (endpoint?: string) => Promise<void>;
+    fetchProducts: (endpoint?: string) => Promise<Product[]>;
+    fetchCustomers: (endpoint?: string) => Promise<Customer[]>;
+    orders: Order[];
+    fetchOrders: () => Promise<void>;
+    createOrder: (order: OrderCreate) => Promise<void>;
+    updateOrderStatus: (orderId: number, status: Order['status']) => Promise<void>;
+    dashboardData: any;
+    setDashboardData: React.Dispatch<React.SetStateAction<any>>;
 };
 
 const Context = createContext<ContextType | undefined>(undefined);
@@ -18,52 +31,72 @@ export const Provider = ({ children }: { children: React.ReactNode }) => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(false);
     const [customers, setCustomers] = useState<Customer[]>([]);
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [dashboardData, setDashboardData] = useState<any>(null);
 
 
-    const fetchProducts = async (endpoint = "") => {
-        try {
-            const token = localStorage.getItem("accessToken");
+ const fetchProducts = useCallback(async (endpoint = "") => {
+  try {
+    setLoading(true);
+    const data = await fetchProductsAPI(endpoint);
+    setProducts(data);
+    return data;
+  } catch (err) {
+    console.error("Error fetching products", err);
+    return []; 
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
-            setLoading(true);
-            const res = await fetch(`http://localhost:8000/api/products/${endpoint}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            const data = await res.json();
-            setProducts(data);
-        } catch (err) {
-            console.error("Error fetching products");
-        } finally {
-            setLoading(false);
-        }
-    };
+const fetchCustomers = useCallback(async (endpoint = "") => {
+  try {
+    setLoading(true);
+    const data = await fetchCustomersAPI(endpoint);
+    setCustomers(data);
+    return data;
+  } catch (err) {
+    console.error("Error fetching customers", err);
+    return []; 
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
-    const fetchCustomers = async (endpoint = "") => {
-        try {
-            setLoading(true);
-            const token = localStorage.getItem("accessToken");
-            const res = await fetch(`http://localhost:8000/api/customers/${endpoint}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            const data = await res.json();
-            setCustomers(data);
-        } catch (err) {
-            console.error("Error fetching customers");
-        } finally {
-            setLoading(false);
-        }
-    };
+const fetchOrders = async () => {
+  try {
+    const data = await fetchOrdersAPI();
+    setOrders(data);
+  } catch (err) {
+    console.error("Error fetching orders", err);
+  }
+};
 
-    
-    useEffect(()=>{
+const createOrder = async (orderData: OrderCreate) => {
+  try {
+    await createOrderAPI(orderData);
+    fetchOrders();
+  } catch (err) {
+    console.error("Error creating order", err);
+  }
+};
+
+const updateOrderStatus = async (id: number, status: Order["status"]) => {
+  try {
+    await updateOrderStatusAPI(id, status);
+  } catch (err) {
+    console.error("Error updating order status", err);
+  }
+};
+
+
+
+    useEffect(() => {
         console.log("Products fetched:", products);
-    },[products]);
-    useEffect(()=>{
+    }, [products]);
+    useEffect(() => {
         console.log("Customers fetched:", customers);
-    },[customers]);
+    }, [customers]);
 
 
     return (
@@ -77,6 +110,12 @@ export const Provider = ({ children }: { children: React.ReactNode }) => {
                 loading,
                 setLoading,
                 fetchProducts,
+                orders,
+                fetchOrders,
+                createOrder,
+                updateOrderStatus,
+                dashboardData,
+                setDashboardData,
             }}
         >
             {children}

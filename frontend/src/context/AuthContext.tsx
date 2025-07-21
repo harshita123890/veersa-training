@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { loginUser, signupUser } from "../api/auth"; // adjust path as needed
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -23,11 +23,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const res = await axios.post("http://localhost:8000/api/login/", {
-        email,
-        password,
-      });
-      const { access } = res.data;
+      const { access } = await loginUser(email, password);
       localStorage.setItem("accessToken", access);
       setIsAuthenticated(true);
       toast.success("Login successful");
@@ -39,11 +35,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signup = async (email: string, password: string) => {
     try {
-      const res = await axios.post("http://localhost:8000/api/signup/", {
-        email,
-        password,
-      });
-      const { access } = res.data;
+      const { access } = await signupUser(email, password);
       localStorage.setItem("accessToken", access);
       setIsAuthenticated(true);
       toast.success("Signup successful");
