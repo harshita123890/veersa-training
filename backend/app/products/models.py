@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 from django.conf import settings
 
@@ -12,7 +13,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock_quantity = models.PositiveIntegerField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='products_created')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.name} ({self.sku})"

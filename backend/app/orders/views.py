@@ -11,6 +11,8 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all().order_by('-created_at')
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
+    def get_queryset(self):
+        return Order.objects.filter(created_by=self.request.user).order_by('-created_at')
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -33,7 +35,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError({"items": [error_message]})
 
         with transaction.atomic():
-            order = Order.objects.create(**validated_data)
+            order = Order.objects.create(created_by=request.user, **validated_data)
 
             for item in items_data:
                 product = item['product']

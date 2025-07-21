@@ -11,9 +11,12 @@ import calendar
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def dashboard_metrics(request):
+    user = request.user
     today = now()
 
+    # Filter only orders created by the current admin
     current_month_orders = Order.objects.filter(
+        created_by=user,
         created_at__year=today.year,
         created_at__month=today.month,
         status__in=["processing", "shipped", "delivered"]
@@ -24,18 +27,27 @@ def dashboard_metrics(request):
         total=Sum('items__price')
     )['total'] or 0
 
+    # Top products from order items of this admin
     top_products = (
         OrderItem.objects
+        .filter(order__created_by=user)
         .values('product__id', 'product__name')
         .annotate(sold_count=Count('id'))
         .order_by('-sold_count')[:5]
     )
 
-    low_stock_products = Product.objects.filter(stock_quantity__lte=5, status='active')
+    # Low stock products for this admin
+    low_stock_products = Product.objects.filter(
+        created_by=user,
+        stock_quantity__lte=5,
+        status='active'
+    )
 
+    # Monthly revenue for this admin
     monthly_revenue_raw = (
         Order.objects
         .filter(
+            created_by=user,
             created_at__year=today.year,
             status__in=["processing", "shipped", "delivered"]
         )

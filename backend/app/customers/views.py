@@ -8,6 +8,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     
+    def get_queryset(self):
+        return Customer.objects.filter(created_by=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)

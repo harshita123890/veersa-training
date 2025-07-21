@@ -51,6 +51,9 @@ class ProductViewSet(viewsets.ModelViewSet):
     
 
 
+    def get_queryset(self):
+        return Product.objects.filter(created_by=self.request.user)
+    
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
         update_product_cache()
