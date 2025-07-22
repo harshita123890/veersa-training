@@ -8,6 +8,7 @@ from app.orders.models import Order, OrderItem
 from app.products.models import Product
 import calendar
 from app.customers.models import Customer  
+from django.db.models import F, Sum, ExpressionWrapper, FloatField
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -24,11 +25,13 @@ def dashboard_metrics(request):
     )
 
     total_orders = current_month_orders.count()
-    total_revenue = current_month_orders.aggregate(
-        total=Sum('items__price')
+    total_revenue = Order.objects.filter(
+        created_by=user,).annotate(
+        item_total=ExpressionWrapper(F('items__price') * F('items__quantity'), output_field=FloatField())
+    ).aggregate(
+        total=Sum('item_total')
     )['total'] or 0
 
-    # Top products from order items of this admin
     top_products = (
         OrderItem.objects
         .filter(order__created_by=user)
@@ -37,14 +40,12 @@ def dashboard_metrics(request):
         .order_by('-sold_quantity')[:5]
     )
 
-    # Low stock products for this admin
     low_stock_products = Product.objects.filter(
         created_by=user,
         stock_quantity__lte=5,
         status='active'
     )
 
-    # Monthly revenue for this admin
     monthly_revenue_raw = (
         Order.objects
         .filter(
